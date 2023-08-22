@@ -5,6 +5,7 @@ int s21_create_matrix(int rows, int columns, matrix_t *result)
 {
     int result_status = OK;
     if(rows < 1 || columns < 1) result_status = INCORRECT_MATRIX_ERROR;
+    if (result == NULL) result_status = INCORRECT_MATRIX_ERROR;
     if(result_status == OK){
         result->rows = rows;
         result->columns = columns;
