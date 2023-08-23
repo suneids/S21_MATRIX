@@ -1,4 +1,5 @@
 #include <stdlib.h>
+#include <stdio.h>
 #include <math.h>
 #include "s21_matrix.h"
 
@@ -110,7 +111,7 @@ int s21_mult_number(matrix_t *A, double number, matrix_t *result){
         result_status = INCORRECT_MATRIX_ERROR;
     }
     else{
-        if(s21_create_matrix(A->rows, A->columns, result)){
+        if((A != result) && s21_create_matrix(A->rows, A->columns, result)){
             result_status = INCORRECT_MATRIX_ERROR;
         }
         for(int i = 0; (i < A->rows) && !result_status; i++){
@@ -148,17 +149,22 @@ int s21_mult_matrix(matrix_t *A, matrix_t *B, matrix_t *result){
 
 int s21_transpose(matrix_t *A, matrix_t *result){
     int result_status = OK;
+    matrix_t temp;
     if(!s21_matrix_is_not_null(A))
         result_status = INCORRECT_MATRIX_ERROR;
-    if(!result_status){
-        if(s21_create_matrix(A->columns, A->rows, result)){
-            result_status = INCORRECT_MATRIX_ERROR;
+    if (!result_status && !s21_create_matrix(A->columns, A->rows, &temp)) {
+        for (int i = 0; i < A->rows; i++) {
+            for (int j = 0; j < A->columns; j++) {
+                temp.matrix[j][i] = A->matrix[i][j];
+            }
         }
+        result->matrix = temp.matrix;
+        result->rows = temp.rows;
+        result->columns = temp.columns;
+
     }
-    for(int i = 0; (i < A->rows) && !result_status; i++){
-        for(int j = 0; j < A->columns; j++){
-            result->matrix[j][i] = A->matrix[i][j];
-        }
+    else {
+        result_status = INCORRECT_MATRIX_ERROR;
     }
     return result_status;
 }
@@ -166,17 +172,21 @@ int s21_transpose(matrix_t *A, matrix_t *result){
 int s21_calc_complements(matrix_t* A, matrix_t* result) {
     int result_status = is_square_matrix(A);
     if (!result_status) {
-        result_status = s21_create_matrix(A->rows, A->columns, result);
+        matrix_t temp;
+        result_status = s21_create_matrix(A->rows, A->columns, &temp);
         for (int i = 0; i < (A->rows) && !result_status; i++) {
             for (int j = 0; j < A->rows; j++) {
                 double minor = 0.0;
                 matrix_t min1;
                 s21_minor(A, &min1, i, j);
                 s21_determinant(&min1, &minor);
-                result->matrix[i][j] = minor * pow(-1, i + j);
+                temp.matrix[i][j] = minor * pow(-1, i + j);
                 s21_remove_matrix(&min1);
             }
         }
+        result->matrix = temp.matrix;
+        result->rows = temp.rows;
+        result->columns = temp.columns;
     }
     else {
         if(result!=NULL) result->matrix = NULL;
@@ -212,8 +222,6 @@ int s21_determinant(matrix_t* A, double* result) {
             *result = det;
         }
     }
-    else
-        result_status = CALCULATION_ERROR;
     return result_status;
 }
 
@@ -235,6 +243,20 @@ int s21_minor(matrix_t* A, matrix_t* result, int n_row, int n_col) {
     return result_status;
 }
 
+int s21_inverse_matrix(matrix_t* A, matrix_t* result){
+    int result_status = is_square_matrix(A);
+    if(!result_status){
+    	double determinant = 0.0;
+    	result_status = s21_determinant(A, &determinant);
+    	if(!result_status){
+            s21_calc_complements(A, result);
+            s21_transpose(result, result);
+            s21_mult_number(result, 1/determinant, result);
+	    }
+    }    
+    return result_status; 
+}
+
 int is_square_matrix(matrix_t* A) {
     int result_status = OK;
     if (!s21_matrix_is_not_null(A))
@@ -242,4 +264,14 @@ int is_square_matrix(matrix_t* A) {
     else if (!(A->columns == A->rows) && (A->rows > -1))
         result_status = CALCULATION_ERROR;
     return result_status;
+}
+
+void output(matrix_t* A) {
+    for (int i = 0; i < A->rows; i++)
+    {
+        for (int j = 0; j < A->columns; j++)
+            printf("%.10lf ", A->matrix[i][j]);
+        printf("\n");
+    }
+    printf("\n");
 }
