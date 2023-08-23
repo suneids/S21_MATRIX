@@ -1,4 +1,5 @@
 #include <stdlib.h>
+#include <math.h>
 #include "s21_matrix.h"
 
 int s21_create_matrix(int rows, int columns, matrix_t *result)
@@ -31,11 +32,12 @@ void s21_remove_matrix(matrix_t *A){
 
 
 int s21_eq_matrix(matrix_t *A, matrix_t *B){
-    int result = s21_matrix_size_equal(A, B);
+    int result = s21_matrix_size_equal(A, B) == 0? SUCCESS : FAILURE;
     if(result){
         for(int i = 0; (i < A->rows) && result; i++){
             for(int j = 0; (j < A->columns) && result; j++){
-                if(A->matrix[i][j] != B->matrix[i][j]){
+                if((A->matrix[i][j] - B->matrix[i][j] >= eps) ||
+                   (B->matrix[i][j] - A->matrix[i][j] >= eps)){
                     result = FAILURE;
                 }        
             }
@@ -45,21 +47,21 @@ int s21_eq_matrix(matrix_t *A, matrix_t *B){
 }
 
 int s21_matrix_size_equal(matrix_t *A, matrix_t *B){
-    int result = SUCCESS;
+    int result = OK;
     if(s21_matrix_is_not_null(A) && s21_matrix_is_not_null(B)){
         if(!(A->rows == B->rows) || !(A->columns == B->columns)){
-            result = FAILURE;
+            result = CALCULATION_ERROR;
         }
     }
     else{
-        result = FAILURE;
+        result = INCORRECT_MATRIX_ERROR;
     }
     return result;
 }
 
 int s21_matrix_is_not_null(matrix_t *A){
     int result = SUCCESS;
-    if(A != NULL){
+    if(A != NULL && A->matrix != NULL){
         for(int i = 0; (i < A->rows) && result; i++){
             if(A->matrix[i] == NULL){
                 result = FAILURE;
@@ -73,9 +75,8 @@ int s21_matrix_is_not_null(matrix_t *A){
 }
 
 int s21_sum_matrix(matrix_t *A, matrix_t *B, matrix_t *result){
-    int result_status = OK;
-    if(s21_matrix_size_equal(A, B)){
-        s21_remove_matrix(result);
+    int result_status = s21_matrix_size_equal(A, B);
+    if(result_status == OK){
         if(s21_create_matrix(A->rows, A->columns, result)){
             result_status = INCORRECT_MATRIX_ERROR;
         }
@@ -85,16 +86,12 @@ int s21_sum_matrix(matrix_t *A, matrix_t *B, matrix_t *result){
             }
         }
     }
-    else{
-        result_status = CALCULATION_ERROR;
-    }
     return result_status;
 }
 
 int s21_sub_matrix(matrix_t *A, matrix_t *B, matrix_t *result){
-    int result_status = OK;
-    if(s21_matrix_size_equal(A, B)){
-        s21_remove_matrix(result);
+    int result_status = s21_matrix_size_equal(A, B);
+    if(result_status == OK){
         if(s21_create_matrix(A->rows, A->columns, result)){
             result_status = INCORRECT_MATRIX_ERROR;
         }
@@ -103,9 +100,6 @@ int s21_sub_matrix(matrix_t *A, matrix_t *B, matrix_t *result){
                 result->matrix[i][j] = A->matrix[i][j] - B->matrix[i][j];     
             }
         }
-    }
-    else{
-        result_status = CALCULATION_ERROR;
     }
     return result_status;
 }
@@ -116,7 +110,6 @@ int s21_mult_number(matrix_t *A, double number, matrix_t *result){
         result_status = INCORRECT_MATRIX_ERROR;
     }
     else{
-        s21_remove_matrix(result);
         if(s21_create_matrix(A->rows, A->columns, result)){
             result_status = INCORRECT_MATRIX_ERROR;
         }
@@ -131,9 +124,10 @@ int s21_mult_number(matrix_t *A, double number, matrix_t *result){
 
 int s21_mult_matrix(matrix_t *A, matrix_t *B, matrix_t *result){
     int result_status = OK;
-    if(s21_matrix_is_not_null(A) && s21_matrix_is_not_null(B) && (A->columns == B->rows)){
-        s21_remove_matrix(result);
-        if(s21_create_matrix(A->rows, B->columns, result)){
+    if(s21_matrix_is_not_null(A) && s21_matrix_is_not_null(B)){
+        if(A->columns != B->rows)
+        	result_status = CALCULATION_ERROR;
+        if(!result_status && s21_create_matrix(A->rows, B->columns, result)){
             result_status = INCORRECT_MATRIX_ERROR;
         }
         for(int i = 0; (i < A->rows) && !result_status; i++){
@@ -157,7 +151,6 @@ int s21_transpose(matrix_t *A, matrix_t *result){
     if(!s21_matrix_is_not_null(A))
         result_status = INCORRECT_MATRIX_ERROR;
     if(!result_status){
-        s21_remove_matrix(result);
         if(s21_create_matrix(A->columns, A->rows, result)){
             result_status = INCORRECT_MATRIX_ERROR;
         }
@@ -171,8 +164,8 @@ int s21_transpose(matrix_t *A, matrix_t *result){
 }
 
 int s21_calc_complements(matrix_t* A, matrix_t* result) {
-    int result_status = !is_square_matrix;
-    if (result_status) {
+    int result_status = is_square_matrix(A);
+    if (!result_status) {
         result_status = s21_create_matrix(A->rows, A->columns, result);
         for (int i = 0; i < (A->rows) && !result_status; i++) {
             for (int j = 0; j < A->rows; j++) {
@@ -185,19 +178,22 @@ int s21_calc_complements(matrix_t* A, matrix_t* result) {
             }
         }
     }
+    else {
+        if(result!=NULL) result->matrix = NULL;
+    }
     return result_status;
 }
 
 
 int s21_determinant(matrix_t* A, double* result) {
-    int result_status = is_square_matrix(&A);
+    int result_status = is_square_matrix(A);
     if (!result_status) {
         double det = 0.0, minor_det = 0.0;
         if (A->columns == 0) {
             *result = 0;
         }
         else if(A->columns == 1){
-            *result += A->matrix[0][0];
+            *result = A->matrix[0][0];
         }
         else if (A->columns == 2) {
             *result = (A->matrix[0][0] * A->matrix[1][1] - A->matrix[0][1] * A->matrix[1][0]);
@@ -205,7 +201,7 @@ int s21_determinant(matrix_t* A, double* result) {
         else {
             matrix_t minor;
             for (int i = 0; i < A->rows; i++) {
-                result_status = s21_minor(&A, &minor, i, 0);
+                result_status = s21_minor(A, &minor, i, 0);
                 if (!result_status) {
                     s21_determinant(&minor, &minor_det);
                     int sign = (i % 2 == 0) ? 1 : -1;
@@ -240,5 +236,10 @@ int s21_minor(matrix_t* A, matrix_t* result, int n_row, int n_col) {
 }
 
 int is_square_matrix(matrix_t* A) {
-    return s21_matrix_is_not_null(A) && (A->columns == A->rows) && (A->rows > -1);
+    int result_status = OK;
+    if (!s21_matrix_is_not_null(A))
+        result_status = INCORRECT_MATRIX_ERROR;
+    else if (!(A->columns == A->rows) && (A->rows > -1))
+        result_status = CALCULATION_ERROR;
+    return result_status;
 }

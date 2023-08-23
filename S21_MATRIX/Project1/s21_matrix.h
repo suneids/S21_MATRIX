@@ -7,7 +7,7 @@
 #define OK 0
 #define INCORRECT_MATRIX_ERROR 1
 #define CALCULATION_ERROR 2
-
+#define eps 1e-7
 
 typedef struct matrix_struct {
     double** matrix;
@@ -32,4 +32,4 @@ int s21_calc_complements(matrix_t* A, matrix_t* result);
 int s21_determinant(matrix_t* A, double* result);
 int s21_minor(matrix_t* A, matrix_t* result, int n_row, int n_col);
 int is_square_matrix(matrix_t *A);
-#endif S21_MATRIX
+#endif 
