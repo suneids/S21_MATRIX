@@ -34,5 +34,4 @@ int s21_minor(matrix_t* A, matrix_t* result, int n_row, int n_col);
 int is_square_matrix(matrix_t *A);
 
 int s21_inverse_matrix(matrix_t* A, matrix_t* result);
-void output(matrix_t* A);
 #endif 

@@ -248,6 +248,8 @@ int s21_inverse_matrix(matrix_t* A, matrix_t* result){
     if(!result_status){
     	double determinant = 0.0;
     	result_status = s21_determinant(A, &determinant);
+    	if(!result_status && determinant == 0) 
+    		result_status = CALCULATION_ERROR;
     	if(!result_status){
             s21_calc_complements(A, result);
             s21_transpose(result, result);
@@ -264,14 +266,4 @@ int is_square_matrix(matrix_t* A) {
     else if (!(A->columns == A->rows) && (A->rows > -1))
         result_status = CALCULATION_ERROR;
     return result_status;
-}
-
-void output(matrix_t* A) {
-    for (int i = 0; i < A->rows; i++)
-    {
-        for (int j = 0; j < A->columns; j++)
-            printf("%.10lf ", A->matrix[i][j]);
-        printf("\n");
-    }
-    printf("\n");
 }
