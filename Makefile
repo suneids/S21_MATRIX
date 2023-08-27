@@ -1,5 +1,5 @@
 CC = gcc
-CFLAGS = -Wall -Wextra -Werror -pedantic -std=c11
+CFLAGS = -Wall -Wextra -Werror -pedantic -std=c11 -g
 GCOVFLAGS:=-fprofile-arcs -ftest-coverage
 LDFLAGS:=-lcheck -lgcov -fprofile-arcs --coverage
 ifeq ($(shell uname -s), Linux)

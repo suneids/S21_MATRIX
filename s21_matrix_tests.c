@@ -1,7 +1,8 @@
-#include "s21_matrix.h"
 #include <check.h>
 #include <stdio.h>
 #include <stdlib.h>
+
+#include "s21_matrix.h"
 // Создание и удаление матрицы
 
 START_TEST(create_matrix_positive) {
@@ -2610,7 +2611,6 @@ START_TEST(inverse_1) {
   s21_remove_matrix(&C);
 }
 END_TEST
-
 
 START_TEST(inverse_2) {
   matrix_t A, C;
